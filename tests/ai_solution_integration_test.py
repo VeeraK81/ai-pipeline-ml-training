@@ -1,6 +1,6 @@
 import pytest
 from unittest import mock
-from app.fraud_detection_train import load_data, preprocess_data, create_pipeline, train_model
+from app.ai_solution_ml_train import load_data, preprocess_data, create_pipeline, train_model
 from io import StringIO
 import os
 import time
