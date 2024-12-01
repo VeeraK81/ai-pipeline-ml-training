@@ -1,0 +1,15 @@
+name: ai_solution_pipeline
+docker_env:
+  image: jedha/sample-mlflow-server
+  environment: [
+    "MLFLOW_TRACKING_URI",
+    "MLFLOW_EXPERIMENT_ID",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "ARTIFACT_ROOT",
+    "BUCKET_NAME",
+    "FILE_KEY"
+      ]
+entry_points:
+  main:
+    command: "python app/ai_solution_ml_training.py"
