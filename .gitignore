@@ -1,0 +1,17 @@
+# Environment variables
+.env
+*.sh
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/

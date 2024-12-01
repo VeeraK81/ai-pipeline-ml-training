@@ -27,8 +27,8 @@ pipeline {
                     string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
                     string(credentialsId: 'backend-store-uri', variable: 'BACKEND_STORE_URI'),
                     string(credentialsId: 'artifact-root', variable: 'ARTIFACT_ROOT'),
-                    string(credentialsId: 'fraud-detection-bucket-name', variable: 'BUCKET_NAME'),
-                    string(credentialsId: 'fraud-detection-file-key', variable: 'FILE_KEY')
+                    string(credentialsId: 'ai-solution-bucket-name', variable: 'BUCKET_NAME'),
+                    string(credentialsId: 'ai-solution-file-key', variable: 'FILE_KEY')
                 ]) {
                     
                     script {
