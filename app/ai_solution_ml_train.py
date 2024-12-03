@@ -39,7 +39,7 @@ mlflow.tensorflow.autolog()
 # Load dataset
 def load_data():
     dataset = tf.keras.preprocessing.image_dataset_from_directory(
-        "../../datasets/plantVillage",
+        "../../../datasets/plantVillage",
         shuffle=True,
         image_size=(IMAGE_SIZE, IMAGE_SIZE),
         batch_size=BATCH_SIZE
