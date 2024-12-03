@@ -14,177 +14,142 @@ import boto3
 import os
 from io import StringIO
 
+    
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import mlflow
+import mlflow.tensorflow
+from tensorflow.keras import layers, models
+from datetime import datetime
 
-# Load data from S3
+# Constants
+IMAGE_SIZE = 256
+BATCH_SIZE = 32
+EPOCHS = 5
+CHANNELS = 3
+N_CLASSES = 5
+EXPERIMENT_NAME = "plant_village_image_classification"
+MODEL_DIR = "./models/tf_model"
+ARTIFACT_PATH = "tf_model"
+
+# Enable MLflow autologging for TensorFlow
+mlflow.tensorflow.autolog()
+
+# Load dataset
 def load_data():
-    bucket_name = os.getenv('BUCKET_NAME')
-    file_key = os.getenv('FILE_KEY')
-
-    # Create an S3 client
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    dataset = tf.keras.preprocessing.image_dataset_from_directory(
+        "../../datasets/plantVillage",
+        shuffle=True,
+        image_size=(IMAGE_SIZE, IMAGE_SIZE),
+        batch_size=BATCH_SIZE
     )
+    return dataset
 
-    # Read the CSV file from S3
-    response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    csv_content = response['Body'].read().decode('utf-8')
-    
-    # Load into a pandas DataFrame
-    return pd.read_csv(StringIO(csv_content))
+# Partition dataset
+def partition_dataset(ds, train_split=0.8, val_split=0.1, shuffle_size=10000):
+    ds_size = len(ds)
+    ds = ds.shuffle(shuffle_size, seed=42)
+    train_size = int(train_split * ds_size)
+    val_size = int(val_split * ds_size)
+    train_ds = ds.take(train_size)
+    val_ds = ds.skip(train_size).take(val_size)
+    test_ds = ds.skip(train_size + val_size)
+    return train_ds, val_ds, test_ds
 
-# Preprocess data
-def preprocess_data(df):
-    # Create 'distance_to_merchant' as an example feature
-    df['distance_to_merchant'] = np.sqrt((df['lat'] - df['merch_lat'])**2 + (df['long'] - df['merch_long'])**2)
-    df['trans_dayofweek'] = pd.to_datetime(df['trans_date_trans_time']).dt.dayofweek
-    df['trans_hour'] = pd.to_datetime(df['trans_date_trans_time']).dt.hour
-    
-    features = ['amt', 'distance_to_merchant', 'city_pop', 'trans_dayofweek', 'trans_hour']
-    X = df[features]
-    y = df['is_fraud']
-    return train_test_split(X, y, test_size=0.2, random_state=42)
+# Data preprocessing
+def preprocess_data(train_ds, val_ds, test_ds):
+    # Data augmentation
+    data_augmentation = models.Sequential([
+        layers.RandomFlip("horizontal_and_vertical"),
+        layers.RandomRotation(0.2),
+    ])
+    train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
 
-# Create the pipeline with both models
-def create_pipeline():
-    return [
-        ("RandomForest", Pipeline(steps=[
-            ("scaler", StandardScaler()),
-            ("classifier", RandomForestClassifier(random_state=42))
-        ])),
-        ("LogisticRegression", Pipeline(steps=[
-            ("scaler", StandardScaler()),
-            ("classifier", LogisticRegression(random_state=42, max_iter=1000))
-        ]))
-    ]
+    # Optimize dataset loading
+    train_ds = train_ds.cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
+    val_ds = val_ds.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
+    test_ds = test_ds.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
+    return train_ds, val_ds, test_ds
 
-# Train model
-def train_model(pipelines, X_train, y_train, param_grids, cv=2, n_jobs=-1, verbose=3):
-    best_model = None
-    best_score = 0
-    best_pipeline = None
-
-    for name, pipe in pipelines:
-        print(f"Training with pipeline: {name}")
-        model = GridSearchCV(pipe, param_grids[name], cv=cv, n_jobs=n_jobs, verbose=verbose, scoring="accuracy")
-        model.fit(X_train, y_train)
-
-        # Check if this model is the best one so far
-        if model.best_score_ > best_score:
-            best_score = model.best_score_
-            best_model = model
-            best_pipeline = name
-
-    print(f"Best model selected: {best_pipeline} with score: {best_score}")
-    return best_model
-
-def log_metrics_and_model(model, X_train, y_train, X_test, y_test, artifact_path, registered_model_name):
-    # Log the train and test accuracy metrics
-    train_score = accuracy_score(y_train, model.predict(X_train))
-    test_score = accuracy_score(y_test, model.predict(X_test))
-    mlflow.log_metric("Train Accuracy", train_score)
-    mlflow.log_metric("Test Accuracy", test_score)
-
-    # Log model to artifacts first
-    mlflow.sklearn.log_model(
-        sk_model=model.best_estimator_,
-        artifact_path=artifact_path
+# Define the CNN model
+def create_model(input_shape, n_classes):
+    model = models.Sequential([
+        layers.Input(shape=input_shape),
+        layers.Rescaling(1./255),
+        layers.Conv2D(32, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, kernel_size=(3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(n_classes, activation='softmax'),
+    ])
+    model.compile(
+        optimizer='adam',
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
+        metrics=['accuracy']
     )
+    return model
 
-    # Construct model URI for registration
-    model_uri = f"runs:/{mlflow.active_run().info.run_id}/{artifact_path}"
+# Train and evaluate model
+def train_and_evaluate_model(model, train_ds, val_ds, test_ds, epochs, artifact_path, model_dir):
+    with mlflow.start_run():
+        # Train the model
+        history = model.fit(
+            train_ds,
+            validation_data=val_ds,
+            epochs=epochs,
+            verbose=1
+        )
+
+        # Log training and validation metrics
+        train_loss = history.history['loss']
+        train_accuracy = history.history['accuracy']
+        val_loss = history.history['val_loss']
+        val_accuracy = history.history['val_accuracy']
+
+        for epoch in range(epochs):
+            mlflow.log_metric("train_loss", train_loss[epoch], step=epoch)
+            mlflow.log_metric("train_accuracy", train_accuracy[epoch], step=epoch)
+            mlflow.log_metric("val_loss", val_loss[epoch], step=epoch)
+            mlflow.log_metric("val_accuracy", val_accuracy[epoch], step=epoch)
+
+        # Evaluate the model on the test set
+        test_loss, test_accuracy = model.evaluate(test_ds)
+        mlflow.log_metric("test_loss", test_loss)
+        mlflow.log_metric("test_accuracy", test_accuracy)
+
+        # Save the model
+        os.makedirs(model_dir, exist_ok=True)
+        model.save(f"{model_dir}/model.keras")
+        mlflow.log_artifact(f"{model_dir}/model.keras", artifact_path=artifact_path)
+
+
+
+# Main function
+def run_experiment():
+    mlflow.set_tracking_uri("http://localhost:8082")
     
-    # Debugging prints
-    print(f"Model URI for registration: {model_uri}")
-
-    # Register the model
-    try:
-        result = mlflow.register_model(model_uri=model_uri, name=registered_model_name)
-        print(f"Model registered with version: {result.version}")
-    except Exception as e:
-        print(f"Error registering model: {str(e)}")
-
-
-def log_additional_metrics(model, X_train, y_train, X_test, y_test):
-    # Calculate and log other metrics
-    train_accuracy = accuracy_score(y_train, model.predict(X_train))
-    train_f1 = f1_score(y_train, model.predict(X_train))
-    train_precision = precision_score(y_train, model.predict(X_train))
-    train_recall = recall_score(y_train, model.predict(X_train))
-    train_log_loss = log_loss(y_train, model.predict_proba(X_train))
-    train_roc_auc = roc_auc_score(y_train, model.predict_proba(X_train)[:, 1])
-
-    mlflow.log_metric("training_accuracy_score", train_accuracy)
-    mlflow.log_metric("training_f1_score", train_f1)
-    mlflow.log_metric("training_precision_score", train_precision)
-    mlflow.log_metric("training_recall_score", train_recall)
-    mlflow.log_metric("training_log_loss", train_log_loss)
-    mlflow.log_metric("training_roc_auc", train_roc_auc)
-
-    # Log the best cross-validation score
-    mlflow.log_metric("best_cv_score", model.best_score_)
-
-
-# Main function to execute the workflow
-def run_experiment(experiment_name, param_grids, artifact_path, registered_model_name):
-    start_time = time.time()
+    mlflow.set_experiment(EXPERIMENT_NAME)
 
     # Load and preprocess data
-    df = load_data()
-    X_train, X_test, y_train, y_test = preprocess_data(df)
+    dataset = load_data()
+    train_ds, val_ds, test_ds = partition_dataset(dataset)
+    train_ds, val_ds, test_ds = preprocess_data(train_ds, val_ds, test_ds)
 
-    # Create pipelines
-    pipelines = create_pipeline()
+    # Create and train model
+    input_shape = (IMAGE_SIZE, IMAGE_SIZE, CHANNELS)
+    model = create_model(input_shape, N_CLASSES)
+    train_and_evaluate_model(model, train_ds, val_ds, test_ds, EPOCHS, ARTIFACT_PATH, MODEL_DIR)
 
-    # Set experiment's info 
-    mlflow.set_experiment(experiment_name)
-    experiment = mlflow.get_experiment_by_name(experiment_name)
 
-    # Ensure no active runs are left open
-    if mlflow.active_run():
-        mlflow.end_run()
-        
-    # Call mlflow autolog
-    mlflow.sklearn.autolog()
-
-    # Start a new run
-    with mlflow.start_run(experiment_id=experiment.experiment_id):
-        # Train model
-        model = train_model(pipelines, X_train, y_train, param_grids)
-
-        # Log metrics and model
-        log_metrics_and_model(model, X_train, y_train, X_test, y_test, artifact_path, registered_model_name)
-        
-        log_additional_metrics(model, X_train, y_train, X_test, y_test)
-        
-    
-    print(f"...Training Done! --- Total training time: {time.time() - start_time} seconds")
-    
-    
-# Entry point for the script
 if __name__ == "__main__":
-    
-    experiment_name = "ai_solution_tuning"
-    mlflow.set_experiment(experiment_name)
-    
-    # Parameter grids for both RandomForest and LogisticRegression
-    param_grids = {
-        "RandomForest": {
-            "classifier__n_estimators": [100, 150],
-            "classifier__max_depth": [10, 20, 30],
-            "classifier__min_samples_split": [2, 5],
-            "classifier__min_samples_leaf": [1, 2]
-        },
-        "LogisticRegression": {
-            "classifier__C": [0.1, 1.0, 10],  # Regularization strength
-            "classifier__penalty": ['l2'],   # Regularization type
-            "classifier__solver": ['lbfgs', 'liblinear']  # Solvers for optimization
-        }
-    }
-    
-    artifact_path = "ai_solution_model"
-    registered_model_name = "ai_solution_best_model"
 
-    run_experiment(experiment_name, param_grids, artifact_path, registered_model_name)
+    run_experiment()
+
 
