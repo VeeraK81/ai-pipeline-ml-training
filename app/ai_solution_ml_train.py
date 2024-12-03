@@ -22,6 +22,8 @@ import mlflow
 import mlflow.tensorflow
 from tensorflow.keras import layers, models
 from datetime import datetime
+import zipfile
+
 
 # Constants
 IMAGE_SIZE = 256
@@ -38,8 +40,35 @@ mlflow.tensorflow.autolog()
 
 # Load dataset
 def load_data():
+    # bucket_name = os.getenv('BUCKET_NAME')
+    # file_key = os.getenv('FILE_KEY')
+
+    # S3 client setup
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    )
+
+    # S3 bucket and file details
+    bucket_name = "flow-bucket-ml"
+    file_key = "ai-pipeline-solution/plant_village_dataset/Potato_Disease.zip"  # Assuming it's a zipped dataset
+    local_file_path = "./plant_village_dataset/Potato_Disease.zip"
+    extract_dir = "./plant_village_dataset/Potato_Disease"
+
+    # Download the dataset
+    print("Downloading dataset...")
+    s3_client.download_file(bucket_name, file_key, local_file_path)
+
+    # Extract the dataset if it's a zip file
+    print("Extracting dataset...")
+    os.makedirs(extract_dir, exist_ok=True)
+    with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_dir)
+
+   
     dataset = tf.keras.preprocessing.image_dataset_from_directory(
-        "../../../datasets/plantVillage",
+        "./plant_village_dataset/Potato_Disease",
         shuffle=True,
         image_size=(IMAGE_SIZE, IMAGE_SIZE),
         batch_size=BATCH_SIZE
