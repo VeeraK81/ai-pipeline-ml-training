@@ -8,7 +8,7 @@ import os
 from unittest import mock
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from app.ai_solution_integration_test import load_data, preprocess_data, create_model, train_and_evaluate_model, partition_dataset
+from app.ai_solution_ml_train import load_data, preprocess_data, create_model, train_and_evaluate_model, partition_dataset
 import mlflow
 from mlflow import log_metric, log_artifact
 
