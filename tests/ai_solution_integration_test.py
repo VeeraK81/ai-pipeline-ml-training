@@ -45,49 +45,32 @@ def test_create_model():
     assert any("dense" in layer_name for layer_name in layer_names), "Dense layer missing in model"
         
 
-# Define a custom save function to bypass actual model saving
-def dummy_save(filepath, *args, **kwargs):
-    print(f"Model save function called with path: {filepath}")
-
-# Define a dummy logging function for metrics
-def dummy_log_metric(metric_name, value, *args, **kwargs):
-    print(f"Metric logged: {metric_name} = {value}")
-
-# Define a dummy logging function for artifacts
-def dummy_log_artifact(artifact_path, *args, **kwargs):
-    print(f"Artifact logged: {artifact_path}")
-
-def test_train_and_evaluate_model():
-    # Patch save and logging methods by overriding them
-    original_save = tf.keras.Model.save
-    original_log_metric = mlflow.log_metric
-    original_log_artifact = mlflow.log_artifact
-
-    try:
-        # Replace the original methods with dummy ones
-        tf.keras.Model.save = dummy_save
-        mlflow.log_metric = dummy_log_metric
-        mlflow.log_artifact = dummy_log_artifact
-
-        # Load and preprocess data
-        dataset = load_data()
-        train_ds, val_ds, test_ds = partition_dataset(dataset)
-        train_ds, val_ds, test_ds = preprocess_data(train_ds, val_ds, test_ds)
-
-        # Create model
-        input_shape = (256, 256, 3)
-        model = create_model(input_shape, 5)
-
+# Test model training (mocking model saving)
+@mock.patch("tensorflow.keras.Model.save")
+def test_train_and_evaluate_model(mock_save):
+    # Mock the save method so we don't actually save the model
+    mock_save.return_value = None
+    
+    # Load and preprocess data
+    dataset = load_data()
+    train_ds, val_ds, test_ds = partition_dataset(dataset)
+    train_ds, val_ds, test_ds = preprocess_data(train_ds, val_ds, test_ds)
+    
+    # Create model
+    input_shape = (256, 256, 3)
+    model = create_model(input_shape, 5)
+    
+    # Mock mlflow.log_metric and mlflow.log_artifact to avoid actual logging during tests
+    with mock.patch("mlflow.log_metric") as mock_log_metric, mock.patch("mlflow.log_artifact") as mock_log_artifact:
         # Train and evaluate the model
         train_and_evaluate_model(model, train_ds, val_ds, test_ds, 5, "tf_model", "./models/tf_model")
 
-        # Validation of expected calls
-        print("Test passed: Save and logging functions were successfully replaced.")
-    finally:
-        # Restore the original methods
-        tf.keras.Model.save = original_save
-        mlflow.log_metric = original_log_metric
-        mlflow.log_artifact = original_log_artifact
+        # Check that the model saving function was called
+        mock_save.assert_called_once_with("./models/tf_model/model.keras")
+        
+        # Check that MLflow log functions were called
+        assert mock_log_metric.call_count > 0, "No metrics were logged"
+        assert mock_log_artifact.call_count > 0, "No artifacts were logged"
 
 # Test model evaluation
 def test_model_evaluation():
