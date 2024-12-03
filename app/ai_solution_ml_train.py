@@ -45,34 +45,45 @@ def load_data():
 
     # S3 client setup
     s3_client = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
     )
-
-    # S3 bucket and file details
+    
     bucket_name = "flow-bucket-ml"
-    file_key = "ai-pipeline-solution/plant_village_dataset/Potato_Disease.zip"  # Assuming it's a zipped dataset
-    local_file_path = "./plant_village_dataset/Potato_Disease.zip"
-    extract_dir = "./plant_village_dataset/Potato_Disease"
+    file_key = "ai-pipeline-solution/plant_village_dataset/Potato_Disease.zip"  # File key in S3
+    local_file_path = "./plant_village_dataset/Potato_Disease.zip"  # Local path to save the file
+    extract_dir = "./plant_village_dataset/Potato_Disease"  # Directory to extract files
+    
+    if os.path.exists(local_file_path):
+        os.remove(local_file_path)
 
-    # Download the dataset
-    print("Downloading dataset...")
-    s3_client.download_file(bucket_name, file_key, local_file_path)
+    try:
+        # Ensure the local directory exists
+        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
 
-    # Extract the dataset if it's a zip file
-    print("Extracting dataset...")
-    os.makedirs(extract_dir, exist_ok=True)
-    with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
-        zip_ref.extractall(extract_dir)
+        # Download the dataset
+        print("Downloading dataset...")
+        s3_client.download_file(bucket_name, file_key, local_file_path)
 
-   
-    dataset = tf.keras.preprocessing.image_dataset_from_directory(
-        "./plant_village_dataset/Potato_Disease",
-        shuffle=True,
-        image_size=(IMAGE_SIZE, IMAGE_SIZE),
-        batch_size=BATCH_SIZE
-    )
+        # Extract the dataset if it's a zip file
+        print("Extracting dataset...")
+        os.makedirs(extract_dir, exist_ok=True)
+        with zipfile.ZipFile(local_file_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+        # Load the dataset
+        print("Loading dataset...")
+        dataset = tf.keras.preprocessing.image_dataset_from_directory(
+            extract_dir,
+            shuffle=True,
+            image_size=(256, 256),  # Replace with IMAGE_SIZE constant
+            batch_size=32  # Replace with BATCH_SIZE constant
+        )
+        print("Dataset loaded successfully!")
+
+    except Exception as e:
+        print(f"Error: {e}")
     return dataset
 
 # Partition dataset
