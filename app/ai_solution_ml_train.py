@@ -50,13 +50,15 @@ def load_data():
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
     )
     
+    if os.path.exists(local_file_path):
+        os.remove(local_file_path)
+    
     bucket_name = "flow-bucket-ml"
     file_key = "ai-pipeline-solution/plant_village_dataset/Potato_Disease.zip"  # File key in S3
     local_file_path = "./plant_village_dataset/Potato_Disease.zip"  # Local path to save the file
     extract_dir = "./plant_village_dataset/Potato_Disease"  # Directory to extract files
     
-    if os.path.exists(local_file_path):
-        os.remove(local_file_path)
+
 
     try:
         # Ensure the local directory exists
