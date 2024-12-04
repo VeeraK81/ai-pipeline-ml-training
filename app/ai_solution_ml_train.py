@@ -31,7 +31,7 @@ BATCH_SIZE = 32
 EPOCHS = 5
 CHANNELS = 3
 N_CLASSES = 5
-EXPERIMENT_NAME = "plant_village_image_classification"
+EXPERIMENT_NAME = "ai_solution_tuning"
 MODEL_DIR = "./models/tf_model"
 ARTIFACT_PATH = "tf_model"
 
