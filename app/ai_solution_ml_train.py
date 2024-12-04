@@ -40,8 +40,8 @@ mlflow.tensorflow.autolog()
 
 # Load dataset
 def load_data():
-    # bucket_name = os.getenv('BUCKET_NAME')
-    # file_key = os.getenv('FILE_KEY')
+    bucket_name = os.getenv('BUCKET_NAME')
+    file_key = os.getenv('FILE_KEY')
 
     # S3 client setup
     s3_client = boto3.client(
@@ -50,12 +50,10 @@ def load_data():
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
     )
     
-    bucket_name = "flow-bucket-ml"
-    file_key = "ai-pipeline-solution/plant_village_dataset/Potato_Disease.zip"  # File key in S3
+    # bucket_name = "flow-bucket-ml"
+    # file_key = "ai-pipeline-solution/plant_village_dataset/Potato_Disease.zip"  # File key in S3
     local_file_path = "./plant_village_dataset/Potato_Disease.zip"  # Local path to save the file
     extract_dir = "./plant_village_dataset/Potato_Disease"  # Directory to extract files
-    
-
 
     try:
         # Ensure the local directory exists
@@ -172,9 +170,14 @@ def train_and_evaluate_model(model, train_ds, val_ds, test_ds, epochs, artifact_
 
 # Main function
 def run_experiment():
-    mlflow.set_tracking_uri("http://localhost:8082")
+    # mlflow.set_tracking_uri("http://localhost:8082")
+    mlflow.set_tracking_uri("https://veeramanicadas-mlflow-server.hf.space")
+
     
-    mlflow.set_experiment(EXPERIMENT_NAME)
+    # mlflow.set_experiment(EXPERIMENT_NAME)
+    
+    experiment_name = "ai_solution_tuning"
+    mlflow.set_experiment(experiment_name)
 
     # Load and preprocess data
     dataset = load_data()
