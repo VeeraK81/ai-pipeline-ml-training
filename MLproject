@@ -12,4 +12,4 @@ docker_env:
       ]
 entry_points:
   main:
-    command: "pip3 install tensorflow==2.17.1 boto3 pandas mlflow && python3 app/ai_solution_ml_train.py"
+    command: "python app/ai_solution_ml_train.py"
