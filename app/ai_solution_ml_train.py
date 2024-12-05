@@ -1,15 +1,6 @@
 import pandas as pd
 import numpy as np
 import mlflow
-import time
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, log_loss, roc_auc_score
-from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
 import boto3
 import os
 from io import StringIO
