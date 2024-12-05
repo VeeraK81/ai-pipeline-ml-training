@@ -1,11 +1,5 @@
-import pandas as pd
-import numpy as np
 import mlflow
 import boto3
-import os
-from io import StringIO
-
-    
 import os
 import tensorflow as tf
 import mlflow
@@ -17,7 +11,7 @@ import zipfile
 # Constants
 IMAGE_SIZE = 256
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 2
 CHANNELS = 3
 N_CLASSES = 5
 EXPERIMENT_NAME = "ai_solution_tuning"
