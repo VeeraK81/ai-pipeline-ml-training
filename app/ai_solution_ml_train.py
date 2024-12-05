@@ -123,8 +123,8 @@ def create_model(input_shape, n_classes):
     return model
 
 # Train and evaluate model
-def train_and_evaluate_model(model, train_ds, val_ds, test_ds, epochs, artifact_path, model_dir):
-    with mlflow.start_run():
+def train_and_evaluate_model(model, train_ds, val_ds, test_ds, epochs, artifact_path, model_dir, exp_id):
+    with mlflow.start_run(experiment_id=exp_id):
         # Train the model
         history = model.fit(
             train_ds,
@@ -167,6 +167,8 @@ def run_experiment():
     
     experiment_name = "ai_solution_tuning"
     mlflow.set_experiment(experiment_name)
+    
+    experiment = mlflow.get_experiment_by_name(experiment_name)
 
     # Load and preprocess data
     dataset = load_data()
@@ -176,7 +178,7 @@ def run_experiment():
     # Create and train model
     input_shape = (IMAGE_SIZE, IMAGE_SIZE, CHANNELS)
     model = create_model(input_shape, N_CLASSES)
-    train_and_evaluate_model(model, train_ds, val_ds, test_ds, EPOCHS, ARTIFACT_PATH, MODEL_DIR)
+    train_and_evaluate_model(model, train_ds, val_ds, test_ds, EPOCHS, ARTIFACT_PATH, MODEL_DIR, experiment.experiment_id)
 
 
 if __name__ == "__main__":
