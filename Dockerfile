@@ -14,6 +14,6 @@ RUN pip3 install -r requirements.txt
 
 RUN python3 -m pip install tensorflow==2.17.1
 
-CMD ["python", "app/ai_solution_ml_train.py"]
+CMD ["python3", "app/ai_solution_ml_train.py"]
 
 
