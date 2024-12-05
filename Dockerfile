@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 
 WORKDIR /home
-COPY . .
+
 ENV PYTHONPATH=/home
 
 RUN apt-get update && \
@@ -20,7 +20,9 @@ RUN apt-get install -y cuda
 
 RUN curl -fsSL https://get.deta.dev/cli.sh | sh
 
-RUN pip3 install -r requirements.txt
+COPY . .
+
+RUN pip install -r requirements.txt
 
 RUN python3 -c "import tensorflow as tf; print('TensorFlow version:', tf.__version__)"
 
