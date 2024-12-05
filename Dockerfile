@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM continuumio/miniconda3
 
 WORKDIR /home
 COPY . .
