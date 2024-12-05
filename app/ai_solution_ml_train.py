@@ -8,11 +8,9 @@ from io import StringIO
     
 import os
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.tensorflow
 from tensorflow.keras import layers, models
-from datetime import datetime
 import zipfile
 
 
