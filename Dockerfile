@@ -12,7 +12,7 @@ RUN curl -fsSL https://get.deta.dev/cli.sh | sh
 
 RUN pip3 install -r requirements.txt
 
-RUN pip3 install tensorflow==2.17.1 mlflow
+RUN python3 -m pip install tensorflow==2.17.1
 
 CMD ["python", "app/ai_solution_ml_train.py"]
 
