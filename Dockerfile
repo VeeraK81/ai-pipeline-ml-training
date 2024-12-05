@@ -20,10 +20,11 @@ RUN apt-get update && apt-get install -y \
 # Install the Deta CLI using the curl script
 RUN curl -fsSL https://get.deta.dev/cli.sh | sh
 
-RUN pip3 install tensorflow==2.17.1 mlflow
 
 # Install Python dependencies from requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Command to run the application (adjust if your entry point is different)
 CMD ["python", "app/ai_solution_ml_train.py"]
+
+
