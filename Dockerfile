@@ -27,6 +27,6 @@ RUN pip install -r requirements.txt
 RUN python3 -c "import tensorflow as tf; print('TensorFlow version:', tf.__version__)"
 
 
-CMD ["python3", "app/ai_solution_ml_train.py"]
+CMD ["python", "app/ai_solution_ml_train.py"]
 
 
