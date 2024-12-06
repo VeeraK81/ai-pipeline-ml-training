@@ -13,7 +13,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image using the Dockerfile
-                    sh 'docker build -t ai-solution-pipeline-image .'
+                    sh 'docker build -t air-quality-pipeline-image .'
                 }
             }
         }
@@ -41,7 +41,7 @@ pipeline {
                                 -e BUCKET_NAME=$BUCKET_NAME \
                                 -e FILE_KEY=$FILE_KEY \
                                 -e BACKEND_STORE_URI=$BACKEND_STORE_URI \
-                                ai-solution-pipeline-image \
+                                air-quality-pipeline-image \
                                 bash -c "pytest --maxfail=1 --disable-warnings"
                         '''
                     }

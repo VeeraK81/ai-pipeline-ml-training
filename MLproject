@@ -1,4 +1,4 @@
-name: ai_solution_pipeline
+name: air_quality_pipeline
 docker_env:
   image: jedha/sample-mlflow-server
   environment: [
@@ -12,4 +12,4 @@ docker_env:
       ]
 entry_points:
   main:
-    command: "pip3 install tensorflow mlflow && python3 app/ai_solution_ml_train.py"
+    command: "python app/air_quality_ml_train.py"
