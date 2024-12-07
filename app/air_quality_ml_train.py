@@ -174,7 +174,7 @@ if __name__ == "__main__":
     experiment_name = "air_quality_tuning"
     mlflow.set_experiment(experiment_name)
     
-    artifact_path = "models/air_quality_model"
+    artifact_path = "air_quality_model"
     registered_model_name = "air_quality_random_forest"
 
     run_experiment(experiment_name, artifact_path, registered_model_name)
