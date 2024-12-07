@@ -32,7 +32,7 @@ def test_load_data():
     assert len(data) > 0, "Loaded data is empty."
 
 
-def test_preprocess_data(data):
+def test_preprocess_data():
     """Test the preprocess_data function."""
 
     assert len(X_train) > 0 and len(X_test) > 0, "Train or test features are empty."
@@ -40,7 +40,7 @@ def test_preprocess_data(data):
     assert X_train.shape[1] == 7, "Number of features in training set is incorrect."
 
 
-def test_forecast_pollutant_levels(data):
+def test_forecast_pollutant_levels():
     """Test the forecast_pollutant_levels function."""
     pollutants = ['code_no2', 'code_so2', 'code_o3', 'code_pm10', 'code_pm25']
     predictions = forecast_pollutant_levels(data, pollutants)
@@ -52,7 +52,7 @@ def test_forecast_pollutant_levels(data):
         assert len(forecast) == 2, "Forecast does not have two steps."
 
 
-def test_log_model_and_metrics(data):
+def test_log_model_and_metrics():
     """Test the log_model_and_metrics function."""
 
     # Mock MLflow logging
