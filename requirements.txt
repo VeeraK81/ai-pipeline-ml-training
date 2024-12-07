@@ -3,11 +3,10 @@ scikit-learn
 pandas
 boto3
 pytest
-numpy
+numpy<1.20
 joblib
 requests
 fsspec
-statsmodels>=0.13.0
 matplotlib
 
 
