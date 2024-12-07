@@ -7,5 +7,7 @@ numpy
 joblib
 requests
 fsspec
+statsmodels
+matplotlib
 
 
