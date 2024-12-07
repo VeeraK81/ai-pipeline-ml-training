@@ -7,7 +7,7 @@ numpy
 joblib
 requests
 fsspec
-statsmodels
+statsmodels>=0.13.0
 matplotlib
 
 
