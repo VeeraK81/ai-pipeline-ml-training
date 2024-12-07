@@ -12,4 +12,4 @@ docker_env:
       ]
 entry_points:
   main:
-    command: "python app/air_quality_ml_train.py"
+    command: bash -c "pip3 install statsmodels && python app/air_quality_ml_train.py"
