@@ -173,8 +173,7 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri("https://veeramanicadas-mlflow-server.hf.space")
     experiment_name = "air_quality_tuning"
     mlflow.set_experiment(experiment_name)
-    
-    artifact_path = "air_quality_model"
+    artifact_path = "models/air_quality_model"
     registered_model_name = "air_quality_random_forest"
 
     run_experiment(experiment_name, artifact_path, registered_model_name)
