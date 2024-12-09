@@ -10,6 +10,7 @@ from sklearn.metrics import classification_report, accuracy_score, f1_score, pre
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.stattools import adfuller
 import os
+from mlflow.tracking import MlflowClient
 
 
 # Sample data loading function from S3 (this can be replaced with file reading)
@@ -89,9 +90,18 @@ def log_model_and_metrics(grid_search, X_train, y_train, X_test, y_test, artifac
     mlflow.sklearn.log_model(best_clf, artifact_path)
 
     model_uri = f"runs:/{mlflow.active_run().info.run_id}/{artifact_path}"
+    run_id = mlflow.active_run().info.run_id
     try:
-        result = mlflow.register_model(model_uri=model_uri, name=registered_model_name)
-        print(f"Model registered with version: {result.version}")
+        # result = mlflow.register_model(model_uri=model_uri, name=registered_model_name)
+        client = MlflowClient()
+        # Register the model
+        try:
+            client.create_registered_model(registered_model_name)
+            client.create_model_version(name=registered_model_name, source=model_uri, run_id=run_id)
+            print(f"Model registered with version: {run_id}")
+        except:
+            client.create_model_version(name=registered_model_name, source=model_uri, run_id=run_id)
+            print(f"Model registered with version: {run_id}")
     except Exception as e:
         print(f"Error registering model: {str(e)}")
 
