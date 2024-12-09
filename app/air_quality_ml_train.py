@@ -37,31 +37,50 @@ def load_data():
 def preprocess_data(df):
     features = ['code_no2', 'code_so2', 'code_o3', 'code_pm10', 'code_pm25', 'x_wgs84', 'y_wgs84']
     target = 'code_qual'
+    
+    # Extract features and target
     X = df[features]
     y = df[target]
+
+    # Handling NaN and infinite values in features and target
+    X = X.replace([np.inf, -np.inf], np.nan)  # Replace infinities with NaN
+    X = X.fillna(X.mean())  # Impute NaN values with the mean of each column
+    
+    # If the target variable has NaN values, you can either impute or drop them (depends on your choice)
+    y = y.dropna()  # Drop rows with NaN in the target variable
+
+    # Align the features and target after dropping NaN rows
+    X = X.loc[y.index]  # Align X with the cleaned y
+
+    # Split the data
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-# ARIMA model fitting and forecasting
 def forecast_pollutant_levels(df, pollutants):
     predictions = {}
     for pollutant in pollutants:
-        if df[pollutant].nunique() == 1:
-            print(f"Handling constant values for {pollutant}. Forecasted values will be the last observed value.")
-            predictions[pollutant] = np.full(2, df[pollutant].iloc[-1])
-            print(f"Forecasted {pollutant} levels for the next 2 hours: {predictions[pollutant]}")
-            continue
+        # Handle NaN values in the pollutant series
+        pollutant_data = df[pollutant].dropna()  # Drop NaN values from the pollutant data
         
-        print(f"Fitting ARIMA model for {pollutant}...")
-        try:
-            model = ARIMA(df[pollutant], order=(1, 1, 1))
-            model_fit = model.fit()
-            forecast = model_fit.forecast(steps=2)
-            predictions[pollutant] = forecast
-            print(f"Forecasted {pollutant} levels for the next 2 hours: {forecast}")
-        except Exception as e:
-            print(f"Error fitting ARIMA model for {pollutant}: {e}")
-            predictions[pollutant] = None
+        # Handle infinite values by replacing with large number
+        pollutant_data.replace([np.inf, -np.inf], np.nan, inplace=True)
+        pollutant_data = pollutant_data.fillna(pollutant_data.mean())  # Impute missing values with the mean
+
+        # Now fit the ARIMA model
+        if pollutant_data.nunique() == 1:
+            print(f"Handling constant values for {pollutant}. Forecasted values will be the observed value.")
+            predictions[pollutant] = np.full(2, pollutant_data.iloc[-1])
+        else:
+            print(f"Fitting ARIMA model for {pollutant}...")
+            try:
+                model = ARIMA(pollutant_data, order=(1, 1, 1))
+                model_fit = model.fit()
+                forecast = model_fit.forecast(steps=2)
+                predictions[pollutant] = forecast
+                print(f"Forecasted {pollutant} levels for the next 2 hours: {forecast}")
+            except Exception as e:
+                print(f"Error fitting ARIMA model for {pollutant}: {e}")
+                predictions[pollutant] = None
 
     return predictions
 
