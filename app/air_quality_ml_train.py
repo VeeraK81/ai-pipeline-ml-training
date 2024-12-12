@@ -317,16 +317,6 @@ def train_model(data, experiment):
         mlflow.log_metric("r2", r2)
         mlflow.sklearn.log_model(pipeline.best_estimator_, "model")
         print("Model and metrics logged to MLflow.")
-        
-    # Save the model and feature columns locally
-    os.makedirs("models", exist_ok=True)
-    save_model_and_features(
-        pipeline.best_estimator_,  # Use the best estimator from the pipeline
-        features,                  # Save feature columns used during training
-        model_path="models/no2_model.pkl",
-        features_path="models/feature_columns.pkl"
-    )
-    print("Model saved!")
 
 
 
