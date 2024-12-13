@@ -78,7 +78,6 @@
     #     assert roc_auc > 0, f"ROC AUC is too low: {roc_auc}"
     
     
-    
 import pytest
 from unittest import mock
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -87,19 +86,29 @@ import pandas as pd
 import numpy as np
 from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model
 
+
 @pytest.fixture
 def preprocessed_data():
+    """Fixture to load and preprocess data for testing."""
     data = load_data()
     processed_data = preprocessing(data)
+
+    # Define features and target
     features = [col for col in processed_data.columns if col not in ['valeur', 'date_debut']]
     X = processed_data[features]
     y = processed_data['valeur']
-    
+
+    # Split data into training and test sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    pipeline = create_pipeline()
-    pipeline.fit(X_train, y_train)
-    
-    return data, processed_data, X_train, X_test, y_train, y_test, pipeline
+
+    return {
+        "raw_data": data,
+        "processed_data": processed_data,
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
+    }
 
 @pytest.fixture
 def trained_pipeline(preprocessed_data):
@@ -115,9 +124,15 @@ def test_load_data(preprocessed_data):
     assert not raw_data.empty, "Loaded data is empty."
     assert "valeur" in raw_data.columns, "Target column 'valeur' is missing in the raw data."
 
-def test_preprocessed_data_structure(preprocessed_data):
-    data, processed_data, X_train, X_test, y_train, y_test, pipeline = preprocessed_data
-    assert isinstance(processed_data, pd.DataFrame), "processed_data is not a DataFrame."
+def test_preprocessing(preprocessed_data):
+    """Test if the preprocessing function works as expected."""
+    processed_data = preprocessed_data["processed_data"]
+    expected_features = ['hour', 'day_of_week', 'month']
+    
+    for feature in expected_features:
+        assert feature in processed_data.columns, f"Feature '{feature}' is missing after preprocessing."
+
+    assert 'valeur' in processed_data.columns, "Target column 'valeur' is missing in the processed data."
 
 def test_pipeline_training(trained_pipeline, preprocessed_data):
     """Test if the pipeline trains successfully."""
@@ -128,12 +143,23 @@ def test_pipeline_training(trained_pipeline, preprocessed_data):
     # Ensure predictions work
     predictions = pipeline.predict(X_test)
     assert len(predictions) == len(y_test), "Pipeline prediction length mismatch with test data."
+
+    # Calculate performance metrics to ensure the model is making predictions
+    mse = mean_squared_error(y_test, predictions)
+    mae = mean_absolute_error(y_test, predictions)
+    r2 = r2_score(y_test, predictions)
     
+    # Basic assertions on performance metrics (these can be adjusted based on expected outcomes)
+    assert mse >= 0, "Mean Squared Error should be non-negative."
+    assert mae >= 0, "Mean Absolute Error should be non-negative."
+    assert 0 <= r2 <= 1, f"R2 score should be between 0 and 1, but got {r2}."
 
 def test_mlflow_logging(preprocessed_data):
     """Test MLflow logging functionality."""
     # Unpack the preprocessed data fixture
-    data, processed_data, X_train, X_test, y_train, y_test, pipeline = preprocessed_data
+    processed_data = preprocessed_data["processed_data"]
+    X_train = preprocessed_data["X_train"]
+    y_train = preprocessed_data["y_train"]
     
     # Mock MLflow logging
     with mock.patch("mlflow.log_metric") as mock_log_metric:
