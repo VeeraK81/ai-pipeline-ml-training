@@ -85,7 +85,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
-from app.air_quality_ml_train import load_data, preprocessing, create_pipeline
+from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model
 
 
 @pytest.fixture
@@ -144,5 +144,14 @@ def test_pipeline_training(trained_pipeline, preprocessed_data):
     # Ensure predictions work
     predictions = pipeline.predict(X_test)
     assert len(predictions) == len(y_test), "Pipeline prediction length mismatch with test data."
+    
+
+def test_mlflow_logging():
+    """Test MLflow logging functionality."""
+    with mock.patch("mlflow.log_metric") as mock_log_metric:
+        with mock.patch("mlflow.log_param") as mock_log_param:
+            train_model(preprocessed_data, "test_experiment")
+            assert mock_log_metric.call_count > 0, "MLflow metrics logging was not called."
+            assert mock_log_param.call_count > 0, "MLflow parameters logging was not called."
 
 
