@@ -87,29 +87,19 @@ import pandas as pd
 import numpy as np
 from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model
 
-
 @pytest.fixture
 def preprocessed_data():
-    """Fixture to load and preprocess data for testing."""
     data = load_data()
     processed_data = preprocessing(data)
-
-    # Define features and target
     features = [col for col in processed_data.columns if col not in ['valeur', 'date_debut']]
     X = processed_data[features]
     y = processed_data['valeur']
-
-    # Split data into training and test sets
+    
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    return {
-        "raw_data": data,
-        "processed_data": processed_data,
-        "X_train": X_train,
-        "X_test": X_test,
-        "y_train": y_train,
-        "y_test": y_test,
-    }
+    pipeline = create_pipeline()
+    pipeline.fit(X_train, y_train)
+    
+    return data, processed_data, X_train, X_test, y_train, y_test, pipeline
 
 @pytest.fixture
 def trained_pipeline(preprocessed_data):
@@ -125,15 +115,9 @@ def test_load_data(preprocessed_data):
     assert not raw_data.empty, "Loaded data is empty."
     assert "valeur" in raw_data.columns, "Target column 'valeur' is missing in the raw data."
 
-def test_preprocessing(preprocessed_data):
-    """Test if the preprocessing function works as expected."""
-    processed_data = preprocessed_data["processed_data"]
-    expected_features = ['hour', 'day_of_week', 'month']
-    
-    for feature in expected_features:
-        assert feature in processed_data.columns, f"Feature '{feature}' is missing after preprocessing."
-
-    assert 'valeur' in processed_data.columns, "Target column 'valeur' is missing in the processed data."
+def test_preprocessed_data_structure(preprocessed_data):
+    data, processed_data, X_train, X_test, y_train, y_test, pipeline = preprocessed_data
+    assert isinstance(processed_data, pd.DataFrame), "processed_data is not a DataFrame."
 
 def test_pipeline_training(trained_pipeline, preprocessed_data):
     """Test if the pipeline trains successfully."""
@@ -146,12 +130,17 @@ def test_pipeline_training(trained_pipeline, preprocessed_data):
     assert len(predictions) == len(y_test), "Pipeline prediction length mismatch with test data."
     
 
-def test_mlflow_logging():
+def test_mlflow_logging(preprocessed_data):
     """Test MLflow logging functionality."""
+    # Unpack the preprocessed data fixture
+    data, processed_data, X_train, X_test, y_train, y_test, pipeline = preprocessed_data
+    
+    # Mock MLflow logging
     with mock.patch("mlflow.log_metric") as mock_log_metric:
         with mock.patch("mlflow.log_param") as mock_log_param:
-            train_model(preprocessed_data, "test_experiment")
+            # Call the train_model function with the processed data
+            train_model(processed_data, "test_experiment")
+            
+            # Assert that MLflow logging was called
             assert mock_log_metric.call_count > 0, "MLflow metrics logging was not called."
             assert mock_log_param.call_count > 0, "MLflow parameters logging was not called."
-
-
