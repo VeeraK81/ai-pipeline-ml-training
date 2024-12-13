@@ -283,7 +283,7 @@ def create_pipeline():
     
     
 
-def train_model(data, experiment_name=None):
+def train_model(data, experiment_name):
     # Set the experiment name in MLflow if provided
     if experiment_name:
         mlflow.set_experiment(experiment_name)
@@ -330,4 +330,4 @@ if __name__ == "__main__":
     mlflow.sklearn.autolog()
     data = load_data()
     processedData = preprocessing(data)
-    train_model(processedData)
+    train_model(processedData, experiment_name)

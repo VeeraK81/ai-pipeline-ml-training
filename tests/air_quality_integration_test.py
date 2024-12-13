@@ -165,7 +165,7 @@ def test_mlflow_logging(preprocessed_data):
     with mock.patch("mlflow.log_metric") as mock_log_metric:
         with mock.patch("mlflow.log_param") as mock_log_param:
             # Call the train_model function with the processed data
-            train_model(processed_data, "test_experiment")
+            train_model(processed_data, "air_quality_tuning")
             
             # Assert that MLflow logging was called
             assert mock_log_metric.call_count > 0, "MLflow metrics logging was not called."
