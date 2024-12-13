@@ -85,14 +85,14 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
-from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model, experiment_name
+from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model
 
 
 data = load_data()
 
-preprocessingData = preprocessing(data)
+preprocessingData = preprocessing()
 
-features = [col for col in data.columns if col not in ['valeur', 'date_debut']]
+features = [col for col in preprocessingData.columns if col not in ['valeur', 'date_debut']]
 X = data[features]
 y = data['valeur']
 

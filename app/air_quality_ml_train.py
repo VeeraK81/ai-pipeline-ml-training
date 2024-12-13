@@ -243,7 +243,7 @@ def load_data():
     
     return data
 
-def preprocessing(data):
+def preprocessing():
     """
     Preprocess the dataset by feature engineering and encoding.
     """
@@ -283,12 +283,12 @@ def create_pipeline():
     
     
 
-def train_model(data, experiment):
+def train_model():
     """
     Train the model with hyperparameter tuning and log the results with MLflow.
     """
     # Select features for training
-    features = [col for col in data.columns if col not in ['valeur', 'date_debut']]
+    features = [col for col in processedData.columns if col not in ['valeur', 'date_debut']]
     X = data[features]
     y = data['valeur']
 
@@ -309,7 +309,7 @@ def train_model(data, experiment):
     print(f"MSE: {mse}, MAE: {mae}, R2: {r2}")
     
     # Log metrics and parameters to MLflow
-    expDetail = mlflow.get_experiment_by_name(experiment)
+    expDetail = mlflow.get_experiment_by_name(experiment_name)
     with mlflow.start_run(experiment_id=expDetail.experiment_id):
         mlflow.log_param("best_params", pipeline.best_params_)
         mlflow.log_metric("mse", mse)
@@ -329,5 +329,5 @@ if __name__ == "__main__":
     mlflow.set_experiment(experiment_name)
     mlflow.sklearn.autolog()
     data = load_data()
-    data = preprocessing(data)
-    train_model(data, experiment_name)
+    processedData = preprocessing()
+    train_model()
