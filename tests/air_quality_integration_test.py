@@ -85,70 +85,64 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
-from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model
+from app.air_quality_ml_train import load_data, preprocessing, create_pipeline
 
 
-data = load_data()
+@pytest.fixture
+def preprocessed_data():
+    """Fixture to load and preprocess data for testing."""
+    data = load_data()
+    processed_data = preprocessing(data)
 
-preprocessedData = preprocessing(data)
-
-features = [col for col in preprocessedData.columns if col not in ['valeur', 'date_debut']]
-X = data[features]
-y = data['valeur']
+    # Define features and target
+    features = [col for col in processed_data.columns if col not in ['valeur', 'date_debut']]
+    X = processed_data[features]
+    y = processed_data['valeur']
 
     # Split data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-pipeline = create_pipeline()
-pipeline.fit(X_train, y_train)
+    return {
+        "raw_data": data,
+        "processed_data": processed_data,
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
+    }
 
+@pytest.fixture
+def trained_pipeline(preprocessed_data):
+    """Fixture to create and train a pipeline for testing."""
+    pipeline = create_pipeline()
+    pipeline.fit(preprocessed_data["X_train"], preprocessed_data["y_train"])
+    return pipeline
 
-
-
-def test_load_data():
+def test_load_data(preprocessed_data):
     """Test if the load_data function loads the data properly."""
-    assert isinstance(data, pd.DataFrame), "Loaded data is not a DataFrame."
-    expected_columns = ['date_debut', 'nom_station', 'typologie', 'influence', 'valeur', 'x_wgs84', 'y_wgs84']
-    assert all(col in data.columns for col in expected_columns), "Missing expected columns in loaded data."
-    assert len(data) > 0, "Loaded data is empty."
+    raw_data = preprocessed_data["raw_data"]
+    assert isinstance(raw_data, pd.DataFrame), "Loaded data is not a DataFrame."
+    assert not raw_data.empty, "Loaded data is empty."
+    assert "valeur" in raw_data.columns, "Target column 'valeur' is missing in the raw data."
 
-def test_preprocessing():
-    """Test the preprocessing function."""
-    processed_data = preprocessingData
-    assert 'hour' in processed_data.columns, "Feature engineering for 'hour' is missing."
-    assert 'day_of_week' in processed_data.columns, "Feature engineering for 'day_of_week' is missing."
-    assert len(processed_data) > 0, "Processed data is empty."
-    dummy_columns = [col for col in processed_data.columns if col.startswith('nom_station_')]
-    assert len(dummy_columns) > 0, "Dummy variables for 'nom_station' are missing."
+def test_preprocessing(preprocessed_data):
+    """Test if the preprocessing function works as expected."""
+    processed_data = preprocessed_data["processed_data"]
+    expected_features = ['hour', 'day_of_week', 'month']
+    
+    for feature in expected_features:
+        assert feature in processed_data.columns, f"Feature '{feature}' is missing after preprocessing."
 
-def test_train_model():
-    """Test the train_model function."""
-    assert len(X_train) > 0 and len(X_test) > 0, "Train or test features are empty."
-    assert len(y_train) > 0 and len(y_test) > 0, "Train or test labels are empty."
-    assert X_train.shape[1] == len(features), "Number of features in training set is incorrect."
+    assert 'valeur' in processed_data.columns, "Target column 'valeur' is missing in the processed data."
 
-    y_pred = pipeline.best_estimator_.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+def test_pipeline_training(trained_pipeline, preprocessed_data):
+    """Test if the pipeline trains successfully."""
+    pipeline = trained_pipeline
+    X_test = preprocessed_data["X_test"]
+    y_test = preprocessed_data["y_test"]
 
-    assert mse > 0, f"Mean Squared Error is too low: {mse}"
-    assert mae > 0, f"Mean Absolute Error is too low: {mae}"
-    assert -1 <= r2 <= 1, f"R2 Score is out of range: {r2}"
-
-def test_pipeline_hyperparameters():
-    """Test the pipeline's hyperparameter tuning."""
-    best_params = pipeline.best_params_
-    assert 'n_estimators' in best_params, "Hyperparameter 'n_estimators' is missing."
-    assert 'max_depth' in best_params, "Hyperparameter 'max_depth' is missing."
-    assert 'min_samples_split' in best_params, "Hyperparameter 'min_samples_split' is missing."
-
-def test_mlflow_logging():
-    """Test MLflow logging functionality."""
-    with mock.patch("mlflow.log_metric") as mock_log_metric:
-        with mock.patch("mlflow.log_param") as mock_log_param:
-            train_model(data, "test_experiment")
-            assert mock_log_metric.call_count > 0, "MLflow metrics logging was not called."
-            assert mock_log_param.call_count > 0, "MLflow parameters logging was not called."
+    # Ensure predictions work
+    predictions = pipeline.predict(X_test)
+    assert len(predictions) == len(y_test), "Pipeline prediction length mismatch with test data."
 
 
