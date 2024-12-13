@@ -26,7 +26,7 @@ pipeline {
                     string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
                     string(credentialsId: 'backend-store-uri', variable: 'BACKEND_STORE_URI'),
-                    string(credentialsId: 'artifact-root', variable: 'ARTIFACT_ROOT'),
+                    string(credentialsId: 'ai-solution-artifact-root', variable: 'ARTIFACT_ROOT'),
                     string(credentialsId: 'ai-solution-bucket-name', variable: 'BUCKET_NAME'),
                     string(credentialsId: 'ai-solution-file-key', variable: 'FILE_KEY')
                 ]) {
