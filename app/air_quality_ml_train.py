@@ -288,7 +288,7 @@ def train_model(data, experiment_name=None):
     if experiment_name:
         mlflow.set_experiment(experiment_name)
     # Select features for training
-    features = [col for col in processedData.columns if col not in ['valeur', 'date_debut']]
+    features = [col for col in data.columns if col not in ['valeur', 'date_debut']]
     X = data[features]
     y = data['valeur']
 
