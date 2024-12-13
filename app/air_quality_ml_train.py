@@ -243,7 +243,7 @@ def load_data():
     
     return data
 
-def preprocessing():
+def preprocessing(data):
     """
     Preprocess the dataset by feature engineering and encoding.
     """
@@ -283,7 +283,7 @@ def create_pipeline():
     
     
 
-def train_model():
+def train_model(processedData):
     """
     Train the model with hyperparameter tuning and log the results with MLflow.
     """
@@ -329,5 +329,5 @@ if __name__ == "__main__":
     mlflow.set_experiment(experiment_name)
     mlflow.sklearn.autolog()
     data = load_data()
-    processedData = preprocessing()
-    train_model()
+    processedData = preprocessing(data)
+    train_model(processedData)

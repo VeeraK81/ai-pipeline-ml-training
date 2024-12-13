@@ -90,9 +90,9 @@ from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, 
 
 data = load_data()
 
-preprocessingData = preprocessing()
+preprocessedData = preprocessing(data)
 
-features = [col for col in preprocessingData.columns if col not in ['valeur', 'date_debut']]
+features = [col for col in preprocessedData.columns if col not in ['valeur', 'date_debut']]
 X = data[features]
 y = data['valeur']
 
