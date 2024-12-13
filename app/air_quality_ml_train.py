@@ -270,16 +270,16 @@ def create_pipeline():
     grid_search = GridSearchCV(model, param_grid, cv=3, scoring='neg_mean_squared_error', verbose=2)
     return grid_search
 
-def save_model_and_features(model, feature_columns, model_path="models/no2_model.pkl", features_path="models/feature_columns.pkl"):
-    # Save the trained model
-    with open(model_path, 'wb') as f:
-        pickle.dump(model, f)
-    print(f"Model saved to {model_path}")
+# def save_model_and_features(model, feature_columns, model_path="models/no2_model.pkl", features_path="models/feature_columns.pkl"):
+#     # Save the trained model
+#     with open(model_path, 'wb') as f:
+#         pickle.dump(model, f)
+#     print(f"Model saved to {model_path}")
 
-    # Save the feature names
-    with open(features_path, 'wb') as f:
-        pickle.dump(feature_columns, f)
-    print(f"Feature columns saved to {features_path}")
+#     # Save the feature names
+#     with open(features_path, 'wb') as f:
+#         pickle.dump(feature_columns, f)
+#     print(f"Feature columns saved to {features_path}")
     
     
 

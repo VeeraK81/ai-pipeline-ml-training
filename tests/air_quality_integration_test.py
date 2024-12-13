@@ -85,20 +85,24 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
-from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model
+from app.air_quality_ml_train import load_data, preprocessing, create_pipeline, train_model, experiment_name
 
 
 data = load_data()
 
-# Splitting the preprocessed data for training and testing
+preprocessingData = preprocessing(data)
+
 features = [col for col in data.columns if col not in ['valeur', 'date_debut']]
 X = data[features]
 y = data['valeur']
+
+    # Split data into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Creating the pipeline for training
 pipeline = create_pipeline()
 pipeline.fit(X_train, y_train)
+
+
 
 
 def test_load_data():
@@ -110,7 +114,7 @@ def test_load_data():
 
 def test_preprocessing():
     """Test the preprocessing function."""
-    processed_data = preprocessing(data)
+    processed_data = preprocessingData
     assert 'hour' in processed_data.columns, "Feature engineering for 'hour' is missing."
     assert 'day_of_week' in processed_data.columns, "Feature engineering for 'day_of_week' is missing."
     assert len(processed_data) > 0, "Processed data is empty."
