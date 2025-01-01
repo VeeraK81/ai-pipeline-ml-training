@@ -5,8 +5,6 @@ import time
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 import boto3
 from io import StringIO
