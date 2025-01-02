@@ -8,33 +8,49 @@ from sklearn.metrics import classification_report, accuracy_score, f1_score, pre
 import os
 import boto3
 from io import StringIO
-
+from sklearn.preprocessing import LabelEncoder
 
 # Load data from S3
 def load_data():
-    bucket_name = os.getenv('BUCKET_NAME')
-    file_key = os.getenv('FILE_KEY')
+    # bucket_name = os.getenv('BUCKET_NAME')
+    # file_key = os.getenv('FILE_KEY')
 
-    # Create an S3 client
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-    )
+    # # Create an S3 client
+    # s3_client = boto3.client(
+    #     's3',
+    #     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    #     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    # )
 
-    # Read the CSV file from S3
-    response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    csv_content = response['Body'].read().decode('utf-8')
+    # # Read the CSV file from S3
+    # response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+    # csv_content = response['Body'].read().decode('utf-8')
     
-    # Load into a pandas DataFrame
-    return pd.read_csv(StringIO(csv_content))
+    # # Load into a pandas DataFrame
+    # return pd.read_csv(StringIO(csv_content))
+    data = pd.read_csv('Air_Quality_Occitanie.csv')
+    return data
+    
+    
 
 # Preprocess data
 def preprocess_data(df):
+    # Feature engineering: extracting date features
+    df["date_ech"] = pd.to_datetime(df["date_ech"])  # Convert date to datetime format
+    df["year"] = df["date_ech"].dt.year
+    df["month"] = df["date_ech"].dt.month
+    df["day"] = df["date_ech"].dt.day
+    df["hour"] = df["date_ech"].dt.hour
+    df["day_of_week"] = df["date_ech"].dt.dayofweek  # 0=Monday, 6=Sunday
+
     # Select features and target variable
-    features = ['code_no2', 'code_so2', 'code_o3', 'code_pm10', 'code_pm25', 'x_wgs84', 'y_wgs84']
-    target = 'code_qual'
-    
+    features = ['year', 'month', 'day', 'hour', 'day_of_week', 'x_wgs84', 'y_wgs84']
+    target = 'lib_qual'  # Target is the air quality label (classification)
+
+    # Encoding the lib_qual (air quality labels)
+    encoder = LabelEncoder()
+    df[target] = encoder.fit_transform(df[target])  # Convert to numeric values
+
     X = df[features]
     y = df[target]
 
@@ -46,14 +62,14 @@ def train_model_with_grid_search(X_train, y_train):
     # Define the model
     clf = RandomForestClassifier(random_state=42)
 
-    # Define the parameter grid for tuning
     param_grid = {
-        'n_estimators': [50, 100, 200],  # Number of trees in the forest
-        'max_depth': [10, 20, 30, None],  # Max depth of the trees
-        'min_samples_split': [2, 5, 10],  # Minimum samples required to split an internal node
-        'min_samples_leaf': [1, 2, 4],    # Minimum samples required to be at a leaf node
-        'max_features': ['sqrt', 'log2']  # Number of features to consider at each split
+        'n_estimators': [50, 100],  # Fewer trees to speed up training
+        'max_depth': [10, 20],  # Limit the depth of trees for faster training
+        'min_samples_split': [2, 5],  # Allow for splits at lower sample sizes
+        'min_samples_leaf': [1, 2],  # Keep leaf nodes smaller
+        'max_features': ['sqrt']  # Use square root of features, a common setting for classification
     }
+
 
     # Perform GridSearchCV to find the best hyperparameters
     grid_search = GridSearchCV(estimator=clf, param_grid=param_grid, cv=5, n_jobs=-1, verbose=2, scoring='accuracy')
@@ -141,7 +157,7 @@ def run_experiment(experiment_name, artifact_path, registered_model_name):
 if __name__ == "__main__":
     
     mlflow.set_tracking_uri("https://veeramanicadas-mlflow-server-demo.hf.space")
-    experiment_name = "air_quality_tuning"
+    experiment_name = "test_experiment"
     mlflow.set_experiment(experiment_name)
 
     artifact_path = "air_quality_model"

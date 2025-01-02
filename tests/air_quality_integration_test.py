@@ -46,6 +46,8 @@ def test_load_data(preprocessed_data):
     assert isinstance(raw_data, pd.DataFrame), "Loaded data is not a DataFrame."
     assert not raw_data.empty, "Loaded data is empty."
     assert "code_qual" in raw_data.columns, "Target column 'code_qual' is missing in the raw data."
+    assert raw_data.isnull().sum().sum() == 0, "There are missing values in the data."
+
 
 def test_preprocessing(preprocessed_data):
     """Test if the preprocessing function works as expected."""
@@ -57,6 +59,7 @@ def test_preprocessing(preprocessed_data):
     # Ensure that the test set has the same feature columns as the training set
     X_test = preprocessed_data["X_test"]
     assert X_train.shape[1] == X_test.shape[1], "Feature mismatch between training and testing data."
+
 
 def test_model_training(trained_model, preprocessed_data):
     """Test if the model training works and evaluate the trained model."""
@@ -81,6 +84,7 @@ def test_model_training(trained_model, preprocessed_data):
     assert 0 <= precision <= 1, f"Precision should be between 0 and 1, but got {precision}."
     assert 0 <= recall <= 1, f"Recall should be between 0 and 1, but got {recall}."
     assert 0 <= roc_auc <= 1, f"ROC AUC score should be between 0 and 1, but got {roc_auc}."
+
 
 def test_mlflow_logging(preprocessed_data):
     """Test MLflow logging functionality."""
