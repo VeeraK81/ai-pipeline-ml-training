@@ -27,9 +27,7 @@ def load_data():
     csv_content = response['Body'].read().decode('utf-8')
     
     # Load into a pandas DataFrame
-    return pd.read_csv(StringIO(csv_content))
-
-    
+    return pd.read_csv(StringIO(csv_content))  
     
 
 # Preprocess data
@@ -52,9 +50,20 @@ def preprocess_data(df):
 
     X = df[features]
     y = df[target]
+    
+    # save_feature_columns(X)
 
     # Split the data into training and testing sets
     return train_test_split(X, y, test_size=0.2, random_state=42)
+
+# # Save feature columns to pickle file
+# def save_feature_columns(features, file_path="models/air_feature_columns.pkl"):
+#     """
+#     Save the feature columns to a pickle file for consistent feature engineering.
+#     """
+#     with open(file_path, 'wb') as f:
+#         pickle.dump(features, f)
+#     print(f"Feature columns saved to {file_path}")
 
 # Hyperparameter tuning function using GridSearchCV
 def train_model_with_grid_search(X_train, y_train):
