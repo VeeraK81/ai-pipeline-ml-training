@@ -12,24 +12,23 @@ from sklearn.preprocessing import LabelEncoder
 
 # Load data from S3
 def load_data():
-    # bucket_name = os.getenv('BUCKET_NAME')
-    # file_key = os.getenv('FILE_KEY')
+    bucket_name = os.getenv('BUCKET_NAME')
+    file_key = os.getenv('FILE_KEY')
 
-    # # Create an S3 client
-    # s3_client = boto3.client(
-    #     's3',
-    #     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    #     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-    # )
+    # Create an S3 client
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+    )
 
-    # # Read the CSV file from S3
-    # response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    # csv_content = response['Body'].read().decode('utf-8')
+    # Read the CSV file from S3
+    response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+    csv_content = response['Body'].read().decode('utf-8')
     
-    # # Load into a pandas DataFrame
-    # return pd.read_csv(StringIO(csv_content))
-    data = pd.read_csv('Air_Quality_Occitanie.csv')
-    return data
+    # Load into a pandas DataFrame
+    return pd.read_csv(StringIO(csv_content))
+
     
     
 
