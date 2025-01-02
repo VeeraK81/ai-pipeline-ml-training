@@ -156,7 +156,7 @@ def run_experiment(experiment_name, artifact_path, registered_model_name):
 if __name__ == "__main__":
     
     mlflow.set_tracking_uri("https://veeramanicadas-mlflow-server-demo.hf.space")
-    experiment_name = "test_experiment"
+    experiment_name = "air_quality_tuning"
     mlflow.set_experiment(experiment_name)
 
     artifact_path = "air_quality_model"
