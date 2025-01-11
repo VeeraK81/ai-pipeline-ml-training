@@ -11,12 +11,16 @@ from app.air_quality_ml_train import load_data, preprocess_data, train_model_wit
 @pytest.fixture
 def preprocessed_data():
     """Fixture to load and preprocess data for testing."""
-    data = load_data()  # Load data from CSV (assuming this is already done)
+    # Load raw data (assumed to be implemented in load_data function)
+    data = load_data()
+    
+    # Preprocess the data using preprocess_data function (e.g., cleaning, encoding, scaling)
     processed_data = preprocess_data(data)
 
-    # Define features and target
+    # Split the preprocessed data into training and testing sets
     X_train, X_test, y_train, y_test = processed_data
 
+    # Return a dictionary containing raw and processed data for reuse in tests
     return {
         "raw_data": data,
         "X_train": X_train,
@@ -25,27 +29,36 @@ def preprocessed_data():
         "y_test": y_test,
     }
 
+
 @pytest.fixture
 def trained_model(preprocessed_data):
     """Fixture to train model using GridSearchCV."""
+    # Extract training features and target from the preprocessed data
     X_train = preprocessed_data["X_train"]
     y_train = preprocessed_data["y_train"]
     
-    # Train model with GridSearchCV
+    # Train the model using a GridSearchCV pipeline
     grid_search = train_model_with_grid_search(X_train, y_train)
     
-    # Get the best estimator from GridSearchCV
+    # Retrieve the best model from GridSearchCV results
     best_model = grid_search.best_estimator_
 
+    # Return the best model and the full grid search object for further testing
     return best_model, grid_search
 
 
 def test_load_data(preprocessed_data):
     """Test if the load_data function loads the data properly."""
     raw_data = preprocessed_data["raw_data"]
+    
+    # Verify that the loaded data is a non-empty DataFrame
     assert isinstance(raw_data, pd.DataFrame), "Loaded data is not a DataFrame."
     assert not raw_data.empty, "Loaded data is empty."
+
+    # Check that the target column exists
     assert "code_qual" in raw_data.columns, "Target column 'code_qual' is missing in the raw data."
+    
+    # Ensure there are no missing values in the data
     assert raw_data.isnull().sum().sum() == 0, "There are missing values in the data."
 
 
@@ -53,10 +66,11 @@ def test_preprocessing(preprocessed_data):
     """Test if the preprocessing function works as expected."""
     X_train = preprocessed_data["X_train"]
     
+    # Ensure training data is non-empty and contains features
     assert X_train.shape[0] > 0, "Training data is empty."
     assert X_train.shape[1] > 0, "Training data has no features."
     
-    # Ensure that the test set has the same feature columns as the training set
+    # Verify that the test set has the same feature structure as the training set
     X_test = preprocessed_data["X_test"]
     assert X_train.shape[1] == X_test.shape[1], "Feature mismatch between training and testing data."
 
@@ -67,18 +81,18 @@ def test_model_training(trained_model, preprocessed_data):
     X_test = preprocessed_data["X_test"]
     y_test = preprocessed_data["y_test"]
 
-    # Ensure predictions work
+    # Verify that the model can make predictions on the test set
     predictions = best_model.predict(X_test)
     assert len(predictions) == len(y_test), "Prediction length does not match test data length."
 
-    # Calculate performance metrics
+    # Calculate performance metrics to evaluate the model
     accuracy = accuracy_score(y_test, predictions)
     f1 = f1_score(y_test, predictions, average='weighted')
     precision = precision_score(y_test, predictions, average='weighted')
     recall = recall_score(y_test, predictions, average='weighted')
     roc_auc = roc_auc_score(y_test, best_model.predict_proba(X_test), multi_class='ovr', average='weighted')
 
-    # Basic assertions on metrics (can adjust thresholds as needed)
+    # Assert that the metrics are within valid ranges
     assert accuracy >= 0, "Accuracy should be non-negative."
     assert 0 <= f1 <= 1, f"F1 score should be between 0 and 1, but got {f1}."
     assert 0 <= precision <= 1, f"Precision should be between 0 and 1, but got {precision}."
@@ -91,20 +105,23 @@ def test_mlflow_logging(preprocessed_data):
     X_train = preprocessed_data["X_train"]
     y_train = preprocessed_data["y_train"]
 
-    # Mock MLflow logging
+    # Mock MLflow logging methods to test logging functionality without actual server interaction
     with mock.patch("mlflow.log_metric") as mock_log_metric:
         with mock.patch("mlflow.log_param") as mock_log_param:
             with mock.patch("mlflow.sklearn.log_model") as mock_log_model:
                 
-                # Start a new run within the context
+                # Start an MLflow run context to test logging calls
                 with mlflow.start_run():
-                    # Call the train_model_with_grid_search function with preprocessed data
+                    # Train the model and log relevant metrics and parameters
                     grid_search = train_model_with_grid_search(X_train, y_train)
-                    
-                    # Log the model and metrics
-                    log_model_and_metrics(grid_search, X_train, y_train, preprocessed_data["X_test"], preprocessed_data["y_test"], "random_forest_model", "random_forest_best_model")
+                    log_model_and_metrics(
+                        grid_search, X_train, y_train,
+                        preprocessed_data["X_test"], preprocessed_data["y_test"],
+                        "random_forest_model", "random_forest_best_model"
+                    )
                 
-                # Assert that MLflow logging methods were called
+                # Verify that MLflow logging methods were called as expected
                 assert mock_log_metric.call_count > 0, "MLflow metrics logging was not called."
                 assert mock_log_param.call_count > 0, "MLflow parameters logging was not called."
                 assert mock_log_model.call_count > 0, "MLflow model logging was not called."
+

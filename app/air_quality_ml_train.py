@@ -56,15 +56,6 @@ def preprocess_data(df):
     # Split the data into training and testing sets
     return train_test_split(X, y, test_size=0.2, random_state=42)
 
-# # Save feature columns to pickle file
-# def save_feature_columns(features, file_path="models/air_feature_columns.pkl"):
-#     """
-#     Save the feature columns to a pickle file for consistent feature engineering.
-#     """
-#     with open(file_path, 'wb') as f:
-#         pickle.dump(features, f)
-#     print(f"Feature columns saved to {file_path}")
-
 # Hyperparameter tuning function using GridSearchCV
 def train_model_with_grid_search(X_train, y_train):
     # Define the model
@@ -164,11 +155,18 @@ def run_experiment(experiment_name, artifact_path, registered_model_name):
 # Entry point for the script
 if __name__ == "__main__":
     
+     # Set the tracking URI for the MLflow server where experiment metadata and artifacts will be logged.
     mlflow.set_tracking_uri("https://veeramanicadas-mlflow-server-demo.hf.space")
+
+    # Define the name of the MLflow experiment to organize related runs.
     experiment_name = "air_quality_tuning"
     mlflow.set_experiment(experiment_name)
 
+    # Specify the artifact path where model-related artifacts (e.g., metrics, parameters) will be saved.
     artifact_path = "air_quality_model"
+
+    # Specify the name of the registered model to manage different versions of the model.
     registered_model_name = "air_quality_best_model"
 
+    # Run the experiment function with the given parameters to execute the ML pipeline.
     run_experiment(experiment_name, artifact_path, registered_model_name)
